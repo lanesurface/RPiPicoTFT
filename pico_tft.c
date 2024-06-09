@@ -4,13 +4,13 @@
 #include "hardware/spi.h"
 #include "pico_tft.h"
 
-const uint32_t SCN_DATA_BUFF_SZ=2<<8;
+const uint32_t SCN_DATA_BUFF_SZ=2<<7;
 uint default_bd_rate=32*MHz;
 
 int
 main()
 {
-  spi_inst_t * spi_ctx=spi0;
+  spi_inst_t * spi_ctx=spi_default;
   uint8_t data_buff[SCN_DATA_BUFF_SZ];
   uint baud_rt;
 
