@@ -4,8 +4,11 @@
 
 const uint MHz=1000000; // MHz=10^6
 
+/**
+ * Procedures common to all TFT displays, but which have (potentially)
+ * different implementions.
+ */
 extern const uint8_t *init_scr, *clr_scr; /*...*/
-extern const uint8_t TFT_SW_RST;
 
 /**
  * An OP code (command), as defined in the respective datasheet, together with
