@@ -8,7 +8,7 @@ const uint32_t SCN_DATA_BUFF_SZ=2<<7;
 uint default_bd_rate=32*MHz;
 
 void
-send_pgm(
+tft_send_pgm(
   spi_inst_t * spi, 
   const uint8_t prog[])
 {
@@ -19,6 +19,8 @@ send_pgm(
   while (n_cmds-->0) {
     cmd=prog[addr++], n_args=prog[addr++];
     ms=n_args&st_delay;
+    gpio_set(TFT_CHX, 0);
+
     spi_write_blocking(
       spi, 
       prog+addr,
@@ -73,5 +75,5 @@ main()
   //   }
   // }
 
-  send_pgm(spi_ctx, init_scr);
+  tft_send_pgm(spi_ctx, init_scr);
 }
