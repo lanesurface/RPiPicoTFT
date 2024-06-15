@@ -4,7 +4,7 @@
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "pico_tft.h"
-#include "tft_gfx.h"
+#include "tftgfx.h"
 
 const uint32_t SCN_DATA_BUFF_SZ=2<<7;
 uint default_bd_rate=32*MHz;

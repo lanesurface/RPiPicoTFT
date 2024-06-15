@@ -1,6 +1,6 @@
-#include "displaycfg.h"
+#include "dspcfg.h"
 #ifdef ST_7735
-#include "st_7735.h"
+#include "st7735.h"
 #else
 #include "dvrdmy.h"
 #endif
@@ -11,17 +11,11 @@
 const uint MHz=1000000; // MHz=10^6
 extern const uint8_t init_scr[], clear_scr[];
 
-typedef uint32_t tft_color_t;
-static tft_color_t ** frame_buff;
-
 /**
  * Initialize the TFT driver and associated structures.
  */
 extern void
 tft_init_ctx();
-
-extern const uint8_t *
-tft_put_pixel(int x, int y, uint32_t color);
 
 /**
  * send_cmd:

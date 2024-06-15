@@ -1,4 +1,4 @@
-#include "displaycfg.h"
+#include "dspcfg.h"
 
 /**
  * Chip-specific data structures, type definitions, constants, and function
