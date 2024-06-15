@@ -1,8 +1,10 @@
 
 #include <stdio.h>
+#include <stdarg.h>
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "pico_tft.h"
+#include "tft_gfx.h"
 
 const uint32_t SCN_DATA_BUFF_SZ=2<<7;
 uint default_bd_rate=32*MHz;
@@ -13,13 +15,13 @@ tft_send_pgm(
   const uint8_t prog[])
 {
   uint8_t n_cmds, cmd, n_args, addr;
-  uint16_t ms;
+  uint16_t delay; /* uint16_t b/c delay may be 500 ms when 0xFF read */
 
   n_cmds=prog[addr++];
   while (n_cmds-->0) {
     cmd=prog[addr++], n_args=prog[addr++];
-    ms=n_args&st_delay;
-    gpio_set(TFT_CHX, 0);
+    delay=n_args&st_delay;
+    gpio_put(TFT_CHX, 0);
 
     spi_write_blocking(
       spi, 
@@ -27,21 +29,42 @@ tft_send_pgm(
       1+n_args&(~st_delay)
     );
 
-    if (ms) {
-      ms=prog[addr++];
-      if (ms==255) {
-        ms=500;
+    if (delay) {
+      delay=prog[addr++];
+      if (delay==255) {
+        delay=500;
       }
-      sleep_ms(ms);
+      sleep_ms(delay);
     }
   }
+}
+
+static void
+__decl_spi_pins(size_t n, ...)
+{
+  va_list vla;
+  va_start(vla, n);
+  while (n-->0)
+  {
+    uint ag=va_arg(vla, uint);
+    gpio_set_function(ag, GPIO_FUNC_SPI);
+  }
+  va_end(vla);
+}
+
+void
+tft_init_ctx()
+{
+  __decl_spi_pins(TFT_MISO, TFT_MOSI, TFT_SCK);
+  gpio_init(TFT_CHX);
+  gpio_set_dir(TFT_CHX, GPIO_OUT);
+  gpio_put(TFT_CHX, 1);
 }
 
 int
 main()
 {
   spi_inst_t * spi_ctx=spi_default;
-  uint8_t data_buff[SCN_DATA_BUFF_SZ];
   uint baud_rt;
 
   stdio_init_all();
@@ -54,26 +77,6 @@ main()
     SPI_MSB_FIRST
   );
   
-  gpio_set_function(TFT_MISO, GPIO_FUNC_SPI);
-  gpio_set_function(TFT_MOSI, GPIO_FUNC_SPI);
-  gpio_set_function(TFT_SCK, GPIO_FUNC_SPI);
-
-  gpio_init(TFT_CHX);
-  gpio_set_dir(TFT_CHX, GPIO_OUT);
-  gpio_put(TFT_CHX, 1); // CHX is active hi
-
-  // while (true) {
-  //   if (spi_is_writable(spi_ctx)) {
-  //     spi_write_blocking(
-  //       spi_ctx, 
-  //       data_buff, 
-  //       SCN_DATA_BUFF_SZ
-  //     );
-  //   } else {
-  //     sleep_ms(10);
-  //     continue;
-  //   }
-  // }
-
+  tft_init_ctx();
   tft_send_pgm(spi_ctx, init_scr);
 }

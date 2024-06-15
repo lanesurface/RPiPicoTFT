@@ -44,24 +44,25 @@ project(pico_tft C CXX ASM)
 
 pico_sdk_init()
 
+# START USER GENERATED PROJECT CONFIGURATION
+
 add_executable(pico_tft pico_tft.c)
 
 pico_set_program_name(pico_tft "pico_tft")
-pico_set_program_version(pico_tft "0.1")
+pico_set_program_version(pico_tft "v0.0.1")
 
 pico_enable_stdio_uart(pico_tft 0)
 pico_enable_stdio_usb(pico_tft 1)
 
-# Add the standard library to the build
 target_link_libraries(pico_tft
-        pico_stdlib
-        hardware_spi)
+  pico_stdlib
+  hardware_spi)
 
 # Add the standard include files to the build
 target_include_directories(pico_tft PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
+  ${CMAKE_CURRENT_LIST_DIR}/include
   ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts or any other standard includes, if required
 )
 
 pico_add_extra_outputs(pico_tft)
-
