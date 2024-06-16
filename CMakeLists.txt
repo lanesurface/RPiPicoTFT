@@ -46,7 +46,9 @@ pico_sdk_init()
 
 # START USER GENERATED PROJECT CONFIGURATION
 
-add_executable(pico_tft pico_tft.c)
+add_executable(pico_tft
+  st7735.c
+  pico_tft.c)
 
 pico_set_program_name(pico_tft "pico_tft")
 pico_set_program_version(pico_tft "v0.0.1")

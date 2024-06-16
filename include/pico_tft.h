@@ -1,5 +1,6 @@
+#include "hardware/spi.h"
 #include "dspcfg.h"
-#ifdef ST_7735
+#ifdef ST7735R
 #include "st7735.h"
 #else
 #include "dvrdmy.h"

@@ -8,10 +8,10 @@
 #ifndef __TFT_ST7735__
 #define __TFT_ST7735__
 
-extern const uint8_t 
-  nop=0x00, 
-  sw_rst=0x01, 
-  slp_in=0x10, 
+const uint8_t 
+  nop=0x00,
+  sw_rst=0x01,
+  slp_in=0x10,
   slp_out=0x11,
   plt_on=0x12,
   nor_on=0x13,
@@ -37,16 +37,5 @@ extern const uint8_t
 // 1000 0000
 // ^..hi bit is set when a delay follows the instruction
 const uint8_t st_delay=0x80;
-
-const uint8_t init_scr[]={
-  /*0x0f*/
-  0x02, sw_rst, st_delay, 0x96,
-  slp_out, st_delay, 0xff, 
-};
-
-const uint8_t clear_scr[]={
-  0x02, ra_set, 0x00, TFT_HEIGHT,
-  ca_set, 0x00, TFT_WIDTH, 
-};
 
 #endif // __TFT_ST7735__
