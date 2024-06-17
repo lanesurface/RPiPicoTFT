@@ -9,7 +9,7 @@
 #ifndef __PICO_TFT__
 #define __PICO_TFT__
 
-const uint MHz=1000000; // MHz=10^6
+#define MHz 1000000 // MHz=10^6
 extern const uint8_t init_scr[], clear_scr[];
 
 /**

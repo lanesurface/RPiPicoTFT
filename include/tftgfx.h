@@ -18,11 +18,6 @@ typedef struct
     uint32_t bit_data : N_COLOR_BITS;
   };
 } tft_color_t;
-uint8_t color_bit_sz[]={ 
-  RED_FDWTH, 
-  GRN_FDWTH, 
-  BLU_FDWTH
-};
 
 typedef struct {
   /**

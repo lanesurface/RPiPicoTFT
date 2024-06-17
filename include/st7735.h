@@ -8,34 +8,22 @@
 #ifndef __TFT_ST7735__
 #define __TFT_ST7735__
 
-const uint8_t 
-  nop=0x00,
-  sw_rst=0x01,
-  slp_in=0x10,
-  slp_out=0x11,
-  plt_on=0x12,
-  nor_on=0x13,
-  inv_off=0x20,
-  inv_on=0x21,
-  gam_set=0x26,
-  disp_off=0x28,
-  disp_on=0x29,
-  ca_set=0x2a,
-  ra_set=0x2b,
-  ram_rw=0x2c,
-  ram_rd=0x2e,
-  ptlar=0x30,
-  te_off=0x34,
-  te_on=0x35,
-  mad_ctl=0x36,
-  idm_off=0x38,
-  ide_on=0x39,
-  col_mod=0x3a;
+/**
+ * Instructions for the ST7735 chip.
+ */
+extern const uint8_t nop, sw_rst, slp_in, slp_out, plt_on,
+  nor_on, inv_off, inv_on, gam_set, disp_off, disp_on,
+  ca_set, ra_set, ram_rw, ram_rd, ptlar, te_off, te_on,
+  mad_ctl, idm_off, ide_on, col_mod;
 
-// col_mod, 0x06 (18 bit/pixel)
-
-// 1000 0000
-// ^..hi bit is set when a delay follows the instruction
-const uint8_t st_delay=0x80;
+/**
+ * When an instruction requires a delay before the next may be sent (eg, 
+ * slp_off), st_delay may be used as a pseudo-instruction to provide this
+ * functionality
+ * 
+ * 1000 0000
+ * ^..hi bit is set when a delay follows the instruction
+ */
+extern const uint8_t st_delay;
 
 #endif // __TFT_ST7735__

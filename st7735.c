@@ -3,6 +3,36 @@
 #include "tftgfx.h"
 #include "dspcfg.h"
 
+const uint8_t 
+  nop=0x00,
+  sw_rst=0x01,
+  slp_in=0x10,
+  slp_out=0x11,
+  plt_on=0x12,
+  nor_on=0x13,
+  inv_off=0x20,
+  inv_on=0x21,
+  gam_set=0x26,
+  disp_off=0x28,
+  disp_on=0x29,
+  ca_set=0x2a,
+  ra_set=0x2b,
+  ram_rw=0x2c,
+  ram_rd=0x2e,
+  ptlar=0x30,
+  te_off=0x34,
+  te_on=0x35,
+  mad_ctl=0x36,
+  idm_off=0x38,
+  ide_on=0x39,
+  col_mod=0x3a;
+
+// col_mod, 0x06 (18 bit/pixel)
+
+// 1000 0000
+// ^..hi bit is set when a delay follows the instruction
+const uint8_t st_delay=0x80;
+
 const uint8_t init_scr[]={
   /*0x0f*/
   0x03, sw_rst, st_delay, 0x96,
@@ -38,17 +68,15 @@ tft_put_px(uint x, uint y, tft_color_t color)
   
 }
 /**
- * A maximum of three bytes must be read, regardless of the boundary of the 
- * pixel in the frame buffer.
+ * A maximum of three bytes must be read, regardless of the boundary of the
+ * pixel in the frame buffer, eg:
+ *
+ * XXXR RRRR RGGG GGGB BBBB BXXX
+ * ^..1,     ^..2,     ^..3
+ *
+ * RRRR RRGG GGGG BBBB BBXX
+ * ^..1,     ^..2,     ^..3
  */
-// XXXR RRRR RGGG GGGB BBBB BXXX
-// ^..1,     ^..2,     ^..3
-// XRRR RRRG GGGG GBBB BBBX
-// XXRR RRRR GGGG GGBB BBBB
-// XXXR RRRR RGGG GGGB BBBB BXXX
-// RRRR RRGG GGGG BBBB BBXX
-// ^..1,     ^..2,     ^..3
-
 tft_color_t 
 tft_get_px(uint x, uint y)
 {
