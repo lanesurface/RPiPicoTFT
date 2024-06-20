@@ -5,7 +5,7 @@
 
 #define FMBF_BDY (TFT_WIDTH*N_COLOR_BITS*TFT_HEIGHT) // Max value for fmbf_ptr
 #define FMBF_TYPE uint8_t
-#define FMBF_SZ  (FMBF_BDY/(sizeof(FMBF_TYPE)*8)) // Size of Frame Buffer in Bytes
+#define FMBF_SZ  (FMBF_BDY/(sizeof(FMBF_TYPE)*8)) // Size of frame buffer in bytes
 
 typedef struct
 {
@@ -15,7 +15,7 @@ typedef struct
       red   : RED_FDWTH, 
       green : GRN_FDWTH, 
       blue  : BLU_FDWTH;
-    uint32_t bit_data : N_COLOR_BITS;
+    uint32_t data : N_COLOR_BITS;
   };
 } tft_color_t;
 
@@ -23,7 +23,7 @@ typedef struct {
   /**
    * Pointer to the first byte associated with (x,y).
    */
-  FMBF_TYPE * const ptr; // 
+  FMBF_TYPE * const ptr;
   /**
    * Advance N bits into the first byte fetched.
    */
@@ -33,21 +33,14 @@ typedef struct {
 /**
  * As it is, the frame buffer will already occupy a significant amount of 
  * system RAM (eg, 128x160 at 18 bits per color is 46kB, or about 18% of the 
- * total memory available). Therefore, pixel data is stored in a format unique 
- * from that required by the display.
- * 
- * Storage Fmt: 
- * (RRRR RR)[0](GG GGGG)[0](BBBB BB)[0]
- * (RR RRRR)[1] (GGGG GG)[1](BB BBBB)[1], 
- * ...,
- * (RRRR RR)[n](GG GGGG)[n](BBBB BB00)[n]
+ * total memory available). Therefore, pixel data needs to be stored in a 
+ * compressed format. For this purpose, the size of the frame buffer can be 
+ * reduced simply by having color data follow each other in memory
+ * bit-by-bit. 
  */
 typedef uint32_t fmbf_size_t;
 static FMBF_TYPE frame_buffer[FMBF_SZ];
 static fmbf_size_t fmbf_ptr=0U;
-
-static fmbf_fetch_t
-__fetch_fmbf_data(uint x, uint y);
 
 /**
  * Get the frame (in the appropriate format for the parameter of RAMRW) 
