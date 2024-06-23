@@ -1,7 +1,6 @@
+#include <string.h> // For memcpy
 #include "pico_tft.h"
 #include "st7735.h"
-#include "tftgfx.h"
-#include "dspcfg.h"
 
 const uint8_t 
   nop=0x00,
@@ -33,7 +32,7 @@ const uint8_t init_scr[]={
   /*0x0f*/
   0x03, sw_rst, st_delay, 0x96,
   slp_out, st_delay, 0xff, col_mod, 
-  N_COLOR_BITS,
+  NUM_CLR_BITS,
 };
 
 const uint8_t clear_scr[]={
@@ -41,87 +40,61 @@ const uint8_t clear_scr[]={
   ca_set, 0x00, TFT_WIDTH, 
 };
 
-/**
- * __fetch_fmbf_data:
- * Convert (x,y) coordinate pair into a location in the frame buffer (of that
- * respective pixel), and return a pointer to the start of this pixel.
- */
-static fmbf_fetch_t
-__fetch_fmbf_data(uint x, uint y)
+static uint
+__cnk_load_next(uint8_t *cnk, fmbf_size_t cnk_sz)
 {
-  fmbf_size_t loc_ptr=(y*TFT_WIDTH+x)*N_COLOR_BITS;
-  uint m=loc_ptr%sizeof(*frame_buffer);
-  
-  return (fmbf_fetch_t){
-    frame_buffer+(loc_ptr/sizeof(fmbf_size_t)),
-    m
+  static fmbf_size_t i=0, j=FMBF_BDY;
+
+  if (j<cnk_sz) {
+    memcpy(cnk, frame_buffer+i, j);
+    return CNK_END_DATA_FRAME;
+  } else {
+    memcpy(cnk, frame_buffer+i, cnk_sz);
+    i+=cnk_sz;
+    j=(j-i);
+  }
+  return 0;
+}
+
+/**
+ * Get chunk of data from [fmbf_ptr..fmbf_ptr+(cnk_sz-1)], with each color
+ * component aligned on the boundary of a byte (ie, each pixel is three bytes 
+ * in the TX buffer).
+ */
+static uint
+__cnk_load_next_aligned(uint8_t *cnk, fmbf_size_t cnk_sz)
+{
+  static fmbf_size_t j=NUM_CLR_COMPS-1;
+  static fmbf_pstn_t pos=(fmbf_pstn_t){
+    0,
+    0
   };
-}
 
-static FMBF_TYPE
-__make_mask(uint start, uint end)
-{
-  uint i;
-  FMBF_TYPE r;
+  uint fmbf_sz_bts, cnk_sz_bts, fd_wth, i;
+  tft_color_t clr;
+  FMBF_TYPE msk;
 
-  r=0;
-  for (i=start; i<=end; i++) {
-    r+=1<<(end-i);
-  }
-
-  return r;
-}
-
-void
-tft_put_px(uint x, uint y, tft_color_t clr)
-{
-  uint fmbf_sz_bts, adv, end, i, j;
-  FMBF_TYPE msk, tmp;
-
-  fmbf_fetch_t pos=__fetch_fmbf_data(x,y);
   fmbf_sz_bts=sizeof(FMBF_TYPE)*8;
-  adv=pos.adv;
-  i=0, j=N_COLOR_BITS;
-  while (j>0) {
-    end=MIN(fmbf_sz_bts,j);
-    j=j-(end+1-adv);
-    msk=__make_mask(adv,end);
-    tmp=*(pos.ptr+i)&~msk;
-    *(pos.ptr+i)=((clr.data>>j)&msk)|tmp;
-    i++;
+  cnk_sz_bts=sizeof(uint8_t)*8;
+  i=0;
+
+  while (i<cnk_sz) { // >>WIP<<
+    clr=__fmbf_extrct(pos);
+    fd_wth=clr_fd_wth[NUM_CLR_COMPS-j];
+    msk=__make_mask(0,fd_wth);
+    cnk[i]=clr.data>>(j*fd_wth)&msk;
+    // pos=__fmbf_next(); // Error: const pointer, cannot assign after initialization.
   }
+  return 0;
 }
 
-/**
- * TODO: Fix this, LOL!
- */
-tft_color_t 
-tft_get_px(uint x, uint y)
+uint
+tft_load_cnk(uint8_t *cnk, fmbf_size_t cnk_sz)
 {
-  uint i, j, k, r;
-  tft_color_t color;
-  FMBF_TYPE buffer_data;
-
-  fmbf_fetch_t px_pos=__fetch_fmbf_data(x, y);
-  j=(sizeof(FMBF_TYPE)*8)-px_pos.adv, k=0; // j=8-3=5, k=0
-  buffer_data=px_pos.ptr[k]; // XXXR RRRR RGGG GGGB BBBB BXXX
-
-  for (fmbf_size_t i=0; i<N_COLOR_BITS; i++) { // i=0..17
-    if (j<=0) {
-      k++, j=1-(sizeof(FMBF_TYPE)*8);
-      buffer_data=px_pos.ptr[k];
-    } else {
-      r=((*px_pos.ptr)>>(j-1))&1;
-      color.data+=r<<(N_COLOR_BITS-i-1);
-      j--;
-    }
+  switch (NUM_CLR_BITS) {
+  case 18:
+    return __cnk_load_next_aligned(cnk, cnk_sz);
+  default: // 12 and 16 bit color can be sent as is.
+    return __cnk_load_next(cnk, cnk_sz);
   }
-
-  return color;
-}
-
-const uint8_t * 
-tft_get_frame()
-{
-  return (const uint8_t *)frame_buffer;
 }

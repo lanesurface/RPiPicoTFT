@@ -48,7 +48,8 @@ pico_sdk_init()
 
 add_executable(pico_tft
   st7735.c
-  pico_tft.c)
+  pico_tft.c
+  tftgfx.c)
 
 pico_set_program_name(pico_tft "pico_tft")
 pico_set_program_version(pico_tft "v0.0.1")

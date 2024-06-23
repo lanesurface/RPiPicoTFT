@@ -1,4 +1,12 @@
+/**
+ * Implementations of the library functions which are specific to the ST7735
+ * driver chip.
+ *
+ * Author(s): Surface, Lane W
+ * Created: 06/22/2024
+ */
 #include "dspcfg.h"
+#include "tftgfx.h"
 
 /**
  * Chip-specific data structures, type definitions, constants, and function

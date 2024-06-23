@@ -25,13 +25,14 @@ typedef unsigned int uint;
  * x262kC (18 bit color).
  */
 #define x262kC
-#define N_COLOR_BITS 18
+#define NUM_CLR_BITS 18
+#define NUM_CLR_COMPS 3
 // ---
 // #define x65kC
-// #define N_COLOR_BITS 16
+// #define NUM_CLR_BITS 16
 // ---
 // #define x4kC
-// #define N_COLOR_BITS 12
+// #define NUM_CLR_BITS 12
 
 /* --Do Not Modify-- */
 #if defined(x4kC)
