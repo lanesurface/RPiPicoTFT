@@ -7,6 +7,8 @@
 #include "pico_tft.h"
 #include "tftgfx.h"
 
+#define TFT_CNK_SZ 256
+
 uint default_bd_rate=32*MHz;
 
 void
@@ -72,18 +74,31 @@ int
 main()
 {
   spi_inst_t * spi_ctx=spi_default;
-  uint baud_rt;
+  uint baud_rt, flag;
+  uint8_t cnk[TFT_CNK_SZ];
 
   stdio_init_all();
   baud_rt=spi_init(spi_ctx, default_bd_rate);
   spi_set_format(
     spi_ctx,
     8, // data_bits
-    SPI_CPHA_1,
+    SPI_CPHA_0,
     SPI_CPOL_0,
     SPI_MSB_FIRST
   );
   
   tft_init_ctx();
   tft_send_pgm(spi_ctx, init_scr);
+  // **draw functions**
+  while (true) {
+    flag=cnk_load_next(cnk, TFT_CNK_SZ);
+    if (flag) {
+      break;
+    } else tft_send_pgm(
+      spi_ctx, 
+      cnk
+    ); //<< FIXME
+  }
+
+  return 0;
 }

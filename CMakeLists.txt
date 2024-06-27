@@ -46,6 +46,9 @@ pico_sdk_init()
 
 # START USER GENERATED PROJECT CONFIGURATION
 
+# add_definitions(-DCLR_RES)
+# set(CLR_RES x262kC CACHE STRING "Color Resolution")
+
 add_executable(pico_tft
   st7735.c
   pico_tft.c

@@ -21,11 +21,11 @@ typedef unsigned int uint;
 #define ST7735R
 
 /**
- * Choose one of these options: x4kC (12 bit color), x65kC (16 bit color), and 
+ * Choose one of these options: x4kC (12 bit color), x65kC (16 bit color), or 
  * x262kC (18 bit color).
  */
 #define x262kC
-#define NUM_CLR_BITS 18
+#define NUM_CLR_BITS  18
 #define NUM_CLR_COMPS 3
 // ---
 // #define x65kC

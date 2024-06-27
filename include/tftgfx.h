@@ -14,7 +14,7 @@
 /**
  * Various flags for the status register.
  */
-#define CNK_END_DATA_FRAME 0x40
+#define END_DATA_FRAME 0x40
 
 typedef struct
 {
@@ -39,55 +39,53 @@ typedef struct {
   /**
    * Pointer to the first byte associated with (x,y).
    */
-  FMBF_TYPE * const ptr;
+  FMBF_TYPE * pos_ptr;
   /**
    * Advance N bits into the first byte fetched.
    */
-  uint8_t adv;
+  uint8_t advance;
 } fmbf_pstn_t;
 
 /**
  * As it is, the frame buffer will already occupy a significant amount of 
- * system RAM (eg, 128x160 at 18 bits per color is 46kB, or about 18% of the 
- * total memory available). Therefore, pixel data needs to be stored in a 
- * compressed format. For this purpose, the size of the frame buffer can be 
- * reduced simply by having color data follow each other in memory
- * bit-by-bit. 
+ * system RAM (eg, 128xRGBx160 at 18 bpp is 46kB; therefore, pixel data needs
+ * to be stored in a compressed format. For this purpose, the size of the frame
+ * buffer can be reduced simply by having color data follow each other in
+ * memory bit-by-bit. 
  */
 typedef uint32_t fmbf_size_t;
 static FMBF_TYPE frame_buffer[FMBF_SZ];
 static fmbf_size_t fmbf_ptr=0U;
 
 /**
- * Access to the frame buffer pointer should always be controlled through this
- * function.
+ * __fmbf_next:
+ * This function, upon the first call, stores the byte and bit offsets into
+ * frame buffer; and, for each subsequent call, will return the position of the
+ * next pixel in the frame.
  */
 static fmbf_pstn_t
-__fmbf_next()
+__fmbf_next(uint * flag)
 {
-  // if (fmbf_ptr+1>FMBF_BDY) {
-  //   fmbf_ptr=0;
-  //   status|=CNK_END_DATA_TX;
-  //   return (fmbf_pstn_t){0xE0,0xE0};
-  // } else {
-
-  //   fmbf_ptr++;
-  // }
-  
   static uint i=0, j=0;
   uint fmbf_sz_bts, k, l, m;
 
   fmbf_sz_bts=sizeof(FMBF_TYPE)*8;
   k=(j+NUM_CLR_BITS);
   i+=k/fmbf_sz_bts, j=k%fmbf_sz_bts;
-  return (fmbf_pstn_t){ 
+
+  if (i>FMBF_BDY) {
+    k=FMBF_BDY-i;
+    i=k, j=k%fmbf_sz_bts;
+    *flag|=END_DATA_FRAME;
+  }
+  return (fmbf_pstn_t){
     frame_buffer+i,
     j
   };
 }
 
 static FMBF_TYPE
-__make_mask(uint start, uint end)
+__make_mask(uint8_t start, uint8_t end)
 {
   uint i;
   FMBF_TYPE r;
@@ -101,22 +99,22 @@ __make_mask(uint start, uint end)
 }
 
 static tft_color_t
-__fmbf_extrct(fmbf_pstn_t pos)
+__fmbf_extrct_clr(fmbf_pstn_t pos)
 {
   uint fmbf_sz_bts, adv, end, i, j;
   uint32_t data;
-  uint8_t msk;
+  FMBF_TYPE msk;
   tft_color_t clr;
 
   fmbf_sz_bts=sizeof(FMBF_TYPE)*8;
-  adv=pos.adv;
+  adv=pos.advance;
   i=0, j=NUM_CLR_BITS;
 
   while (j>0) {
     end=MIN(fmbf_sz_bts,j);
     j=j-(end+1-adv);
     msk=__make_mask(adv,end);
-    clr.data+=(*pos.ptr&msk)<<(j+pos.adv);
+    clr.data+=(*pos.pos_ptr&msk)<<(j+pos.advance);
     i++;
   }
 
@@ -132,8 +130,18 @@ __fmbf_extrct(fmbf_pstn_t pos)
  * function preceeds it. Fetching the frame and writing it to the chip 
  * needlessly is sure to reduce the performance of the program.
  */
+extern uint 
+cnk_load_next(uint8_t * cnk, fmbf_size_t cnk_sz);
+
+/**
+ * Because some driver chips may require HSYNC and VSYNC, this necessitates
+ * the ability of the frame to be loaded line-by-line.
+ * 
+ * The return value is the flag indicating whether a VSYNC should follow this 
+ * function call.
+ */
 extern uint
-tft_load_cnk(uint8_t *cnk, fmbf_size_t cnk_sz);
+tft_load_next_line(uint8_t * ln, uint dpl);
 
 extern void
 tft_put_pixel(uint x, uint y, tft_color_t color);
@@ -147,10 +155,12 @@ tft_draw_line(uint xa, uint ya, uint xb, uint yb);
 extern void
 tft_draw_circle(uint x, uint y, uint r);
 
-// extern const uint8_t *
+// tftbmp.h
+// extern void
 // tft_draw_bitmap(tft_bitmap * bitmap);
 
-// extern const uint8_t *
+// tftfnt.h
+// extern void
 // tft_render_text(
 //   tft_font * fnt, 
 //   int x, 

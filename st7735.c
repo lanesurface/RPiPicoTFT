@@ -2,52 +2,31 @@
 #include "pico_tft.h"
 #include "st7735.h"
 
-const uint8_t 
-  nop=0x00,
-  sw_rst=0x01,
-  slp_in=0x10,
-  slp_out=0x11,
-  plt_on=0x12,
-  nor_on=0x13,
-  inv_off=0x20,
-  inv_on=0x21,
-  gam_set=0x26,
-  disp_off=0x28,
-  disp_on=0x29,
-  ca_set=0x2a,
-  ra_set=0x2b,
-  ram_rw=0x2c,
-  ram_rd=0x2e,
-  ptlar=0x30,
-  te_off=0x34,
-  te_on=0x35,
-  mad_ctl=0x36,
-  idm_off=0x38,
-  ide_on=0x39,
-  col_mod=0x3a;
-
 const uint8_t st_delay=0x80;
 
 const uint8_t init_scr[]={
   /*0x0f*/
-  0x03, sw_rst, st_delay, 0x96,
-  slp_out, st_delay, 0xff, col_mod, 
-  NUM_CLR_BITS,
+  0x03, // << N instructions
+  SWRST, st_delay, 0x96,
+  SLPOUT, st_delay, 0xff, 
+  COLMOD, 0x06 // << Change
 };
 
 const uint8_t clear_scr[]={
-  0x02, ra_set, 0x00, TFT_HEIGHT,
-  ca_set, 0x00, TFT_WIDTH, 
+  0x02, // << N instructions
+  RASET, 0x00, TFT_HEIGHT,
+  CASET, 0x00, TFT_WIDTH, 
 };
 
 static uint
-__cnk_load_next(uint8_t *cnk, fmbf_size_t cnk_sz)
+__cnk_load_next(uint8_t * cnk, fmbf_size_t cnk_sz)
 {
   static fmbf_size_t i=0, j=FMBF_BDY;
 
   if (j<cnk_sz) {
     memcpy(cnk, frame_buffer+i, j);
-    return CNK_END_DATA_FRAME;
+    i=0, j=FMBF_BDY;
+    return END_DATA_FRAME;
   } else {
     memcpy(cnk, frame_buffer+i, cnk_sz);
     i+=cnk_sz;
@@ -62,39 +41,119 @@ __cnk_load_next(uint8_t *cnk, fmbf_size_t cnk_sz)
  * in the TX buffer).
  */
 static uint
-__cnk_load_next_aligned(uint8_t *cnk, fmbf_size_t cnk_sz)
+__cnk_load_next_aligned(uint8_t * cnk, fmbf_size_t cnk_sz)
 {
-  static fmbf_size_t j=NUM_CLR_COMPS-1;
+  static fmbf_size_t j=NUM_CLR_COMPS;
   static fmbf_pstn_t pos=(fmbf_pstn_t){
     0,
     0
   };
 
-  uint fmbf_sz_bts, cnk_sz_bts, fd_wth, i;
+  uint fmbf_sz_bts, fd_wth, fd_acm, flag, i;
   tft_color_t clr;
-  FMBF_TYPE msk;
 
   fmbf_sz_bts=sizeof(FMBF_TYPE)*8;
-  cnk_sz_bts=sizeof(uint8_t)*8;
-  i=0;
+  i=0, flag=0, fd_acm=NUM_CLR_BITS;
 
-  while (i<cnk_sz) { // >>WIP<<
-    clr=__fmbf_extrct(pos);
-    fd_wth=clr_fd_wth[NUM_CLR_COMPS-j];
-    msk=__make_mask(0,fd_wth);
-    cnk[i]=clr.data>>(j*fd_wth)&msk;
-    // pos=__fmbf_next(); // Error: const pointer, cannot assign after initialization.
+  while (i<cnk_sz) {
+    if (flag) {
+      return END_DATA_FRAME;
+    }
+    clr=__fmbf_extrct_clr(pos); // pos=(0,0)
+    fd_wth=clr_fd_wth[NUM_CLR_COMPS-j]; // R:6
+    fd_acm=(fd_acm-fd_wth)+pos.advance; // 12
+    cnk[i++]=(clr.data>>fd_acm)&__make_mask(
+      0, 
+      fd_wth
+    );
+    pos=__fmbf_next(&flag), j=(j-1);
   }
+
   return 0;
 }
 
 uint
-tft_load_cnk(uint8_t *cnk, fmbf_size_t cnk_sz)
+cnk_load_next(uint8_t * cnk, fmbf_size_t cnk_sz)
 {
   switch (NUM_CLR_BITS) {
   case 18:
-    return __cnk_load_next_aligned(cnk, cnk_sz);
+    return __cnk_load_next_aligned(cnk,cnk_sz);
+  default: // 12 and 16 bit color can be written as is.
+    return __cnk_load_next(cnk,cnk_sz);
+  }
+}
+
+/**
+ * extern uint
+ * tft_load_next_line(uint8_t * ln, uint dpl);
+ * 
+ * uint dpl, flag;
+ * const char line_buffer[NUM_CLR_COMPS*TFT_WIDTH];
+ * 
+ * flag=tf_load_next_line(
+ *   line_buffer, 
+ *   3*TFT_WIDTH
+ * );
+ * if (flag) {
+ *   VSYNC;
+ * } else HSYNC;
+ */
+
+#define LINE_LENGTH (TFT_WIDTH*NUM_CLR_COMPS)
+#define LINE_SZ (NUM_CLR_COMPS*TFT_WIDTH)
+
+static uint
+__ld_line(uint8_t * ln, uint dpl)
+{
+  static fmbf_pstn_t pos=(fmbf_pstn_t){
+    0,
+    0
+  };
+  uint num_bytes, flag, fmbf_sz_bts, i, j, k;
+  FMBF_TYPE msk;
+
+  j=(NUM_CLR_BITS*TFT_WIDTH);
+  fmbf_sz_bts=sizeof(uint8_t)*8;
+  num_bytes=j/fmbf_sz_bts, k=j%fmbf_sz_bts;
+  if (k) {
+    num_bytes+=1;
+  }
+
+  for (i=0; i<num_bytes; i++) {
+    pos=__fmbf_next(&flag);
+    // **FIXME**
+    if (j<fmbf_sz_bts) {
+      ln[i]=frame_buffer[i]&__make_mask(
+        0,
+        j
+      );
+    } else {
+      ln[i]=frame_buffer[i];
+      j=(j-fmbf_sz_bts);
+    }
+  }
+  return 0;
+}
+
+static uint
+__ld_line_aligned(uint8_t * ln, uint dpl)
+{
+  /* TODO */
+}
+
+/**
+ * Loads the next line (row in the frame buffer) into the provided buffer, and
+ * returns the state of this transfer operation (eg, END_DATA_FRAME if the 
+ * entire contents of the frame buffer have been provided; and indicating that
+ * the VSYNC follows).
+ */
+uint
+tft_load_next_line(uint8_t * ln, uint dpl)
+{
+  switch (NUM_CLR_BITS) {
+  case 18:
+    return __ld_line_aligned(ln,dpl);
   default: // 12 and 16 bit color can be sent as is.
-    return __cnk_load_next(cnk, cnk_sz);
+    return __ld_line(ln,dpl);
   }
 }

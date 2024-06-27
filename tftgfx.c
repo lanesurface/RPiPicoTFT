@@ -40,15 +40,15 @@ tft_set_pixel(uint x, uint y, tft_color_t clr)
 
   fmbf_pstn_t pos=__fetch_fmbf_data(x,y);
   fmbf_sz_bts=sizeof(FMBF_TYPE)*8;
-  adv=pos.adv;
+  adv=pos.advance;
   i=0, j=NUM_CLR_BITS;
 
   while (j>0) {
     end=MIN(fmbf_sz_bts,j);
     j=j-(end+1-adv);
     msk=__make_mask(adv,end);
-    tmp=pos.ptr[i]&~msk;
-    pos.ptr[i]=((clr.data>>(j+pos.adv))&msk)|tmp;
+    tmp=pos.pos_ptr[i]&~msk;
+    pos.pos_ptr[i]=((clr.data>>(j+pos.advance))&msk)|tmp;
     i++;
   }
 }
@@ -56,34 +56,8 @@ tft_set_pixel(uint x, uint y, tft_color_t clr)
 tft_color_t
 tft_get_pixel(uint x, uint y)
 {
-  fmbf_pstn_t pos=__fetch_fmbf_data(x,y);
-  return __fmbf_extrct(pos);
+  return __fmbf_extrct_clr(__fetch_fmbf_data(
+    x,
+    y
+  ));
 }
-
-// /**
-//  * TODO: Fix this, LOL!
-//  */
-// tft_color_t 
-// tft_get_px(uint x, uint y)
-// {
-//   uint i, j, k, r;
-//   tft_color_t color;
-//   FMBF_TYPE buffer_data;
-
-//   fmbf_fetch_t px_pos=__fetch_fmbf_data(x,y);
-//   j=(sizeof(FMBF_TYPE)*8)-px_pos.adv, k=0; // j=8-3=5, k=0
-//   buffer_data=px_pos.ptr[k]; // XXXR RRRR RGGG GGGB BBBB BXXX
-
-//   for (fmbf_size_t i=0; i<NUM_CLR_BITS; i++) { // i=0..17
-//     if (j<=0) {
-//       k++, j=1-(sizeof(FMBF_TYPE)*8);
-//       buffer_data=px_pos.ptr[k];
-//     } else {
-//       r=((*px_pos.ptr)>>(j-1))&1;
-//       color.data+=r<<(NUM_CLR_BITS-i-1);
-//       j--;
-//     }
-//   }
-
-//   return color;
-// }

@@ -19,15 +19,33 @@
 /**
  * Instructions for the ST7735 chip.
  */
-extern const uint8_t nop, sw_rst, slp_in, slp_out, plt_on,
-  nor_on, inv_off, inv_on, gam_set, disp_off, disp_on,
-  ca_set, ra_set, ram_rw, ram_rd, ptlar, te_off, te_on,
-  mad_ctl, idm_off, ide_on, col_mod;
+#define NOP     0x00
+#define SWRST   0x01
+#define SLPIN   0x10
+#define SLPOUT  0x11
+#define PLTON   0x12
+#define NORON   0x13
+#define INVOFF  0x20
+#define INVON   0x21
+#define GAMSET  0x26
+#define DISPOFF 0x28
+#define DISPON  0x29
+#define CASET   0x2A
+#define RASET   0x2B
+#define RAMRW   0x2C
+#define RAMRD   0x2E
+#define PLTAR   0x30
+#define TEOFF   0x34
+#define TEON    0x35
+#define MADCTR  0x36
+#define IDMOFF  0x38
+#define IDEON   0x39
+#define COLMOD  0x3A
 
 /**
  * When an instruction requires a delay before the next may be sent (eg, 
  * slp_off), st_delay may be used as a pseudo-instruction to provide this
- * functionality
+ * functionality.
  * 
  * 1000 0000
  * ^..hi bit is set when a delay follows the instruction
