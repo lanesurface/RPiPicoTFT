@@ -46,7 +46,7 @@ tft_set_pixel(uint x, uint y, tft_color_t clr)
   while (j>0) {
     end=MIN(fmbf_sz_bts,j);
     j=j-(end+1-adv);
-    msk=__make_mask(adv,end);
+    msk=fmbf_make_msk(adv,end);
     tmp=pos.pos_ptr[i]&~msk;
     pos.pos_ptr[i]=((clr.data>>(j+pos.advance))&msk)|tmp;
     i++;
@@ -56,7 +56,7 @@ tft_set_pixel(uint x, uint y, tft_color_t clr)
 tft_color_t
 tft_get_pixel(uint x, uint y)
 {
-  return __fmbf_extrct_clr(__fetch_fmbf_data(
+  return fmbf_extract_clr(__fetch_fmbf_data(
     x,
     y
   ));

@@ -7,7 +7,7 @@
 #include "pico_tft.h"
 #include "tftgfx.h"
 
-#define TFT_CNK_SZ 256
+#define TFT_CNK_SZ 3080
 
 uint default_bd_rate=32*MHz;
 
@@ -22,7 +22,7 @@ tft_send_pgm(
   n_cmds=prog[addr++];
   while (n_cmds-->0) {
     cmd=prog[addr++], n_args=prog[addr++];
-    delay=n_args&st_delay;
+    delay=n_args&ST_DELAY;
 
     gpio_put(TFT_CHX, 0);
     gpio_put(TFT_DCX, 0);
@@ -32,7 +32,7 @@ tft_send_pgm(
     spi_write_blocking(
       spi, 
       prog+addr+1,
-      1+n_args&(~st_delay)
+      1+n_args&(~ST_DELAY)
     );
 
     if (delay) {
@@ -76,6 +76,7 @@ main()
   spi_inst_t * spi_ctx=spi_default;
   uint baud_rt, flag;
   uint8_t cnk[TFT_CNK_SZ];
+  cnk_data_t cnk_data;
 
   stdio_init_all();
   baud_rt=spi_init(spi_ctx, default_bd_rate);
@@ -88,11 +89,11 @@ main()
   );
   
   tft_init_ctx();
-  tft_send_pgm(spi_ctx, init_scr);
+  tft_send_pgm(spi_ctx, tft_init_screen());
   // **draw functions**
   while (true) {
-    flag=cnk_load_next(cnk, TFT_CNK_SZ);
-    if (flag) {
+    cnk_data=tft_load_next_cnk(cnk,TFT_CNK_SZ);
+    if (cnk_data.flag) {
       break;
     } else tft_send_pgm(
       spi_ctx, 

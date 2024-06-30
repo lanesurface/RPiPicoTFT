@@ -1,7 +1,7 @@
 #include "hardware/spi.h"
 #include "dspcfg.h"
 #ifdef ST7735R
-#include "st7735.h"
+#include "st77xx.h"
 #else
 #include "dvrdmy.h"
 #endif
@@ -10,7 +10,6 @@
 #define __PICO_TFT__
 
 #define MHz 1000000 // MHz=10^6
-extern const uint8_t init_scr[], clear_scr[];
 
 /**
  * Initialize the TFT driver and associated structures.

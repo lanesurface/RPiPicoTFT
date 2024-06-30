@@ -50,6 +50,6 @@
  * 1000 0000
  * ^..hi bit is set when a delay follows the instruction
  */
-extern const uint8_t st_delay;
+#define ST_DELAY 0x80
 
 #endif // __TFT_ST7735__

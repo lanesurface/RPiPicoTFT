@@ -50,7 +50,7 @@ pico_sdk_init()
 # set(CLR_RES x262kC CACHE STRING "Color Resolution")
 
 add_executable(pico_tft
-  st7735.c
+  st77xx.c
   pico_tft.c
   tftgfx.c)
 
